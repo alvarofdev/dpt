@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Inventario Rollos</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d1117;color:#e6edf3;height:100dvh;overflow:hidden;display:flex;flex-direction:column}
+
+    /* ── Screens ── */
+    .screen{display:none;flex-direction:column;height:100dvh}
+    .screen.active{display:flex}
+
+    /* ── Header ── */
+    .hdr{background:#1f4e79;padding:12px 16px;display:flex;align-items:center;gap:10px;min-height:58px;flex-shrink:0}
+    .hdr-title{font-size:17px;font-weight:700;flex:1}
+    .hdr-sub{font-size:12px;color:#90caf9}
+    .badge{background:#0d47a1;border-radius:20px;padding:4px 12px;font-size:13px;color:#90caf9;white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
+
+    /* ── Step indicator ── */
+    .step-bar{display:flex;background:#161b22;border-bottom:1px solid #30363d;flex-shrink:0}
+    .step{flex:1;padding:8px 4px;text-align:center;font-size:11px;color:#484f58;border-bottom:3px solid transparent}
+    .step.active{color:#58a6ff;border-bottom-color:#1f6feb;font-weight:700}
+    .step.done{color:#3fb950;border-bottom-color:#238636}
+
+    /* ── Content ── */
+    .content{flex:1;overflow-y:auto;padding:14px 16px}
+
+    /* ── Banner ── */
+    .banner{background:#1a2d40;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:6px 14px}
+    .bitem{display:flex;gap:5px;align-items:baseline}
+    .blabel{color:#90caf9;font-size:12px}
+    .bvalue{color:#64b5f6;font-weight:700;font-size:14px;word-break:break-all}
+
+    /* ── Input ── */
+    .lbl{display:block;color:#8b949e;font-size:13px;margin-bottom:6px;margin-top:14px}
+    .inp{width:100%;background:#161b22;border:2px solid #30363d;border-radius:8px;color:#e6edf3;font-size:22px;padding:14px 14px;outline:none;transition:border-color .15s}
+    .inp:focus{border-color:#1f6feb}
+    .inp::placeholder{color:#484f58;font-size:16px}
+
+    /* ── Buttons ── */
+    .btn{border:none;border-radius:8px;font-size:16px;font-weight:600;padding:15px 20px;cursor:pointer;width:100%;margin-top:10px;transition:opacity .15s;line-height:1.2}
+    .btn:active{opacity:.65}
+    .btn-primary{background:#1f6feb;color:#fff}
+    .btn-success{background:#238636;color:#fff}
+    .btn-continue{background:#1a5276;color:#fff}
+    .btn-warning{background:#9a6700;color:#fff}
+    .btn-danger {background:#da3633;color:#fff}
+    .btn-default{background:#21262d;color:#e6edf3;border:1px solid #30363d}
+    .btn-sm{font-size:14px;padding:11px 16px}
+
+    /* ── Message ── */
+    .msg{border-radius:8px;padding:11px 14px;margin-top:12px;font-size:14px;font-weight:600;display:none;line-height:1.4}
+    .msg.show{display:block}
+    .msg-ok   {background:#1a3a2a;color:#3fb950;border:1px solid #238636}
+    .msg-error{background:#3a1717;color:#f85149;border:1px solid #da3633}
+    .msg-info {background:#2d2000;color:#e3b341;border:1px solid #9a6700}
+
+    /* ── Count ── */
+    .count{background:#21262d;border-radius:8px;padding:9px 14px;margin-top:12px;font-size:15px;font-weight:700;color:#e3b341;border:1px solid #30363d}
+
+    /* ── Scan list ── */
+    .slist{background:#161b22;border-radius:8px;border:1px solid #30363d;overflow:hidden;margin-top:10px;max-height:28dvh;overflow-y:auto}
+    .sitem{display:flex;align-items:center;padding:9px 14px;border-bottom:1px solid #21262d;gap:10px}
+    .sitem:last-child{border-bottom:none}
+    .snum{color:#484f58;font-size:12px;min-width:26px}
+    .slote{font-size:15px;flex:1;word-break:break-all}
+    .shora{color:#484f58;font-size:12px;white-space:nowrap}
+
+    /* ── Lotes existentes en ubicacion ── */
+    .existentes-wrap{background:#0d2b1a;border:1px solid #2ea043;border-radius:8px;margin:10px 0 4px;padding:8px 12px}
+    .existentes-titulo{color:#3fb950;font-size:13px;font-weight:700;margin-bottom:6px}
+    .btn-del-lote{background:#da3633;border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:12px;padding:4px 10px;flex-shrink:0;font-weight:700}
+    .btn-del-lote:active{background:#b91c1c}
+
+    /* ── Menu ── */
+    .app-title{text-align:center;padding:16px 0 8px}
+    .app-title h1{font-size:24px;color:#58a6ff;font-weight:800;letter-spacing:1px}
+    .app-title p{font-size:13px;color:#8b949e;margin-top:3px}
+    .mitem{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px 14px;margin-top:10px;display:flex;align-items:center;gap:14px;cursor:pointer}
+    .mitem:active{background:#21262d}
+    .mnum{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0;color:#fff}
+    .mn-blue  {background:#1f6feb}
+    .mn-green {background:#238636}
+    .mn-orange{background:#9a6700}
+    .mn-gray  {background:#484f58}
+    .mtext h3{font-size:15px;margin-bottom:2px}
+    .mtext p{font-size:12px;color:#8b949e}
+    .rule{border:none;border-top:1px solid #30363d;margin:14px 0}
+
+    /* ── Stats ── */
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+    .stat{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;text-align:center}
+    .stat-n{font-size:26px;font-weight:800;color:#58a6ff}
+    .stat-l{font-size:11px;color:#8b949e;margin-top:3px}
+
+    /* ── Divider buttons ── */
+    .btn-divider{border-top:1px solid #30363d;margin-top:14px;padding-top:4px}
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════ PASO 1 — LOGIN ════════════════════════════════════ -->
+<div id="sc-login" class="screen active">
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">Control de Inventario</div>
+      <div class="hdr-sub">Rollos de material</div>
+    </div>
+  </div>
+  <div class="step-bar">
+    <div class="step active">1 · Login</div>
+    <div class="step">2 · Operacion</div>
+    <div class="step">3 · Ubicacion</div>
+    <div class="step">4 · Rollos</div>
+  </div>
+  <div class="content">
+    <div class="app-title">
+      <h1>INVENTARIO</h1>
+      <p>Ingrese sus credenciales para continuar</p>
+    </div>
+    <span class="lbl">Usuario:</span>
+    <input id="inp-login-user" class="inp" type="text"
+      placeholder="Escanear o ingresar usuario"
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+    <span class="lbl">Contraseña:</span>
+    <input id="inp-login-pass" class="inp" type="password"
+      placeholder="Ingresar contraseña" autocomplete="off">
+    <div id="msg-login" class="msg"></div>
+    <div id="session-alert" class="msg"></div>
+    <button class="btn btn-primary" style="margin-top:16px" onclick="confirmarLogin()">Ingresar [Enter]</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PASO 2 — SELECCIONAR OPERACION ═══════════════════ -->
+<div id="sc-menu" class="screen">
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">Seleccionar Operacion</div>
+      <div class="hdr-sub">Paso 2</div>
+    </div>
+    <div id="menu-badge" class="badge"></div>
+  </div>
+  <div class="step-bar">
+    <div class="step done">1 · Login</div>
+    <div class="step active">2 · Operacion</div>
+    <div class="step">3 · Ubicacion</div>
+    <div class="step">4 · Rollos</div>
+  </div>
+  <div class="content">
+    <div class="app-title">
+      <p id="menu-op-txt" style="font-size:15px;color:#3fb950;font-weight:700"></p>
+    </div>
+
+    <div class="mitem" onclick="irRegistrar()">
+      <div class="mnum mn-blue">1</div>
+      <div class="mtext">
+        <h3>Registrar Rollo en Ubicacion</h3>
+        <p>Asignar rollos a ubicaciones fisicas del deposito</p>
+      </div>
+    </div>
+
+    <div class="mitem" onclick="irInventario()">
+      <div class="mnum mn-green">2</div>
+      <div class="mtext">
+        <h3>Inventario Mensual</h3>
+        <p>Conteo fisico de rollos por ubicacion</p>
+      </div>
+    </div>
+
+    <div class="rule"></div>
+
+    <div class="mitem" onclick="irExportar()">
+      <div class="mnum mn-orange">3</div>
+      <div class="mtext">
+        <h3>Exportar Datos a PC</h3>
+        <p>Descargar JSON para importar en el programa</p>
+      </div>
+    </div>
+
+    <div class="mitem" onclick="irVerDatos()">
+      <div class="mnum mn-gray">4</div>
+      <div class="mtext">
+        <h3>Ver Datos Guardados</h3>
+        <p>Resumen de registros en esta tablet</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PASO 2b — NOMBRE INVENTARIO ══════════════════════ -->
+<div id="sc-inv-setup" class="screen">
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">Inventario Mensual</div>
+      <div class="hdr-sub">Paso 2 — Nombre del inventario</div>
+    </div>
+    <div id="invs-badge" class="badge"></div>
+  </div>
+  <div class="step-bar">
+    <div class="step done">1 · Login</div>
+    <div class="step active">2 · Operacion</div>
+    <div class="step">3 · Ubicacion</div>
+    <div class="step">4 · Rollos</div>
+  </div>
+  <div class="content">
+    <span class="lbl">Nombre del inventario:</span>
+    <input id="inp-inv-nombre" class="inp" type="text"
+      placeholder="Ej: INV_2026-07"
+      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    <div id="msg-inv-setup" class="msg"></div>
+    <button class="btn btn-primary" onclick="confirmarInventario()">Continuar [Enter]</button>
+    <button class="btn btn-default btn-sm" onclick="goMenu()">Volver al Menu</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PASO 3 — ESCANEAR UBICACION ══════════════════════ -->
+<div id="sc-ubicacion" class="screen">
+  <div class="hdr">
+    <div>
+      <div class="hdr-title" id="ubic-titulo">Escanear Ubicacion</div>
+      <div class="hdr-sub">Paso 3</div>
+    </div>
+    <div id="ubic-badge" class="badge"></div>
+  </div>
+  <div class="step-bar">
+    <div class="step done">1 · Login</div>
+    <div class="step done">2 · Operacion</div>
+    <div class="step active">3 · Ubicacion</div>
+    <div class="step">4 · Rollos</div>
+  </div>
+  <div class="content">
+    <div id="ubic-banner" class="banner"></div>
+    <span class="lbl">Escanee o ingrese el codigo de ubicacion:</span>
+    <input id="inp-ubic" class="inp" type="text"
+      placeholder="Escanear o escribir ubicacion (DEP1, DEP2, D077...)"
+      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    <div id="msg-ubic" class="msg"></div>
+    <button class="btn btn-primary" onclick="confirmarUbicacion()">Abrir Ubicacion [Enter]</button>
+    <button class="btn btn-default btn-sm btn-divider" onclick="goMenu()">Volver al Menu</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PASO 4 — ESCANEAR ROLLOS ═════════════════════════ -->
+<div id="sc-rollos" class="screen">
+  <div class="hdr">
+    <div>
+      <div class="hdr-title" id="rollos-titulo">Escanear Rollos</div>
+      <div class="hdr-sub">Paso 4</div>
+    </div>
+  </div>
+  <div class="step-bar">
+    <div class="step done">1 · Login</div>
+    <div class="step done">2 · Operacion</div>
+    <div class="step done">3 · Ubicacion</div>
+    <div class="step active">4 · Rollos</div>
+  </div>
+  <div class="content">
+    <div id="rollos-banner" class="banner"></div>
+    <div id="rollos-existentes" style="display:none">
+      <div class="existentes-wrap">
+        <div class="existentes-titulo" id="existentes-titulo"></div>
+        <div id="rollos-existentes-list" class="slist"></div>
+      </div>
+    </div>
+    <span class="lbl">Escanear rollo (lote):</span>
+    <input id="inp-lote" class="inp" type="text"
+      placeholder="Escanear o escribir codigo de rollo"
+      autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    <div id="msg-rollos" class="msg"></div>
+    <div id="rollos-count" class="count">Rollos en la tanda: 0</div>
+    <div id="rollos-list" class="slist"></div>
+
+    <button class="btn btn-success" onclick="siguienteUbicacion()">
+      Guardar y continuar con otra ubicacion
+    </button>
+    <button class="btn btn-continue" onclick="finalizarTodo()">
+      Guardar y Finalizar — exportar a PC
+    </button>
+    <button class="btn btn-warning btn-sm btn-divider" onclick="cancelarTanda()">
+      Cancelar tanda sin guardar
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ EXPORTAR ══════════════════════════════════════════ -->
+<div id="sc-export" class="screen">
+  <div class="hdr"><div class="hdr-title">Exportar Datos a PC</div></div>
+  <div class="content">
+    <div id="stats-export" class="stats"></div>
+    <p style="color:#8b949e;font-size:13px;line-height:1.6;margin-bottom:4px">
+      Descarga el archivo JSON, copialo a la PC por USB y luego importalo desde
+      <strong style="color:#58a6ff">Opcion 7 — Importar de Tablet</strong> del programa principal.
+    </p>
+    <button class="btn btn-success" onclick="exportar()">Descargar JSON</button>
+    <div class="rule"></div>
+    <button class="btn btn-danger btn-sm" onclick="limpiarDatos()">Limpiar Datos Locales</button>
+    <button class="btn btn-default btn-sm" onclick="goMenu()">Volver al Menu</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ VER DATOS ═════════════════════════════════════════ -->
+<div id="sc-datos" class="screen">
+  <div class="hdr"><div class="hdr-title">Datos Guardados</div></div>
+  <div class="content">
+    <div id="stats-datos" class="stats"></div>
+    <div id="inv-detalle"></div>
+    <button class="btn btn-default" onclick="goMenu()">Volver al Menu</button>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Credenciales
+// ─────────────────────────────────────────────────────────────────────────────
+const CREDS = { '123': 'Operador1' };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Estado
+// ─────────────────────────────────────────────────────────────────────────────
+const S = {
+  loggedIn: false,
+  operario: '',
+  modo: '',         // 'registro' | 'inventario'
+  inv_nombre: '',
+  ubicacion: '',
+  pending: [],      // [{lote, hora}]
+  ses: new Set(),
+  totalUbicaciones: 0,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Persistencia localStorage — datos comprometidos
+// ─────────────────────────────────────────────────────────────────────────────
+function getData() {
+  try { return JSON.parse(localStorage.getItem('inv_data') || '{"registros":[],"inventarios":{}}'); }
+  catch { return {registros:[], inventarios:{}}; }
+}
+function saveData(d) { localStorage.setItem('inv_data', JSON.stringify(d)); }
+
+function loteEnRegistros(lote) {
+  return getData().registros.some(r => r.id_lote === lote);
+}
+function loteEnInventario(nombre, lote) {
+  return (getData().inventarios[nombre] || []).some(r => r.id_lote === lote);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sesion en curso — guardado automatico ante salida inesperada
+// ─────────────────────────────────────────────────────────────────────────────
+const SESSION_KEY = 'inv_session';
+
+function saveSession() {
+  if (!S.loggedIn || !S.modo) return;
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({
+      operario:         S.operario,
+      modo:             S.modo,
+      inv_nombre:       S.inv_nombre,
+      ubicacion:        S.ubicacion,
+      pending:          S.pending,
+      totalUbicaciones: S.totalUbicaciones,
+      guardadoEn:       nowStr(),
+    }));
+  } catch(e) {}
+}
+
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch(e) { return null; }
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function goRollosConSesion() {
+  const esInv = S.modo === 'inventario';
+  document.getElementById('rollos-titulo').textContent = esInv ? 'Inventario — Rollos' : 'Registrar — Rollos';
+  const items = [['UBIC:', S.ubicacion], ['OP:', S.operario]];
+  if (esInv) items.unshift(['INV:', S.inv_nombre]);
+  banner('rollos-banner', items);
+  const n = S.pending.length;
+  document.getElementById('rollos-count').textContent = `Rollos en la tanda: ${n}`;
+  document.getElementById('rollos-list').innerHTML = slistHTML(S.pending);
+  setMsg('msg-rollos', `Sesion recuperada: ${n} rollo(s) pendiente(s).`, 'info');
+  mostrarLotesExistentes(S.ubicacion);
+  showScreen('sc-rollos');
+  focusInp('inp-lote');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Utils
+// ─────────────────────────────────────────────────────────────────────────────
+function nowStr()  { return new Date().toLocaleString('sv').replace('T',' '); }
+function timeStr() { return new Date().toLocaleTimeString('sv'); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function focusInp(id) {
+  setTimeout(() => { const e = document.getElementById(id); if (e) { e.value = ''; e.focus(); } }, 250);
+}
+
+function setMsg(id, txt, kind) {
+  const e = document.getElementById(id);
+  e.textContent = txt;
+  e.className = 'msg show msg-' + kind;
+}
+function clearMsg(id) { const e = document.getElementById(id); e.textContent = ''; e.className = 'msg'; }
+
+function banner(id, items) {
+  document.getElementById(id).innerHTML = items.map(([l, v]) =>
+    `<div class="bitem"><span class="blabel">${l}</span><span class="bvalue">${v}</span></div>`
+  ).join('');
+}
+
+function slistHTML(items) {
+  return items.map((r, i) =>
+    `<div class="sitem"><span class="snum">${i + 1}</span><span class="slote">${r.lote}</span><span class="shora">${r.hora}</span><button class="btn-del-lote" onclick="eliminarDeTanda(${i})">✕</button></div>`
+  ).join('');
+}
+
+function eliminarDeTanda(idx) {
+  const lote = S.pending[idx].lote;
+  S.pending.splice(idx, 1);
+  S.ses.delete(lote);
+  const n = S.pending.length;
+  document.getElementById('rollos-count').textContent = `Rollos en la tanda: ${n}`;
+  document.getElementById('rollos-list').innerHTML = slistHTML(S.pending);
+  saveSession();
+  focusInp('inp-lote');
+}
+
+function renderStats(containerId, detalle) {
+  const d = getData();
+  const nReg  = d.registros.length;
+  const keys  = Object.keys(d.inventarios);
+  const nInv  = keys.reduce((s, k) => s + d.inventarios[k].length, 0);
+  document.getElementById(containerId).innerHTML =
+    `<div class="stat"><div class="stat-n">${nReg}</div><div class="stat-l">Registros de rollos</div></div>
+     <div class="stat"><div class="stat-n">${keys.length}</div><div class="stat-l">Inventarios</div></div>
+     <div class="stat"><div class="stat-n">${nInv}</div><div class="stat-l">Filas inventario</div></div>
+     <div class="stat"><div class="stat-n" style="font-size:14px">${keys[keys.length - 1] || '—'}</div><div class="stat-l">Ultimo inventario</div></div>`;
+  if (detalle && keys.length) {
+    document.getElementById('inv-detalle').innerHTML = keys.map(k =>
+      `<div style="margin-top:10px;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:10px 14px">
+        <strong style="color:#58a6ff">${k}</strong>
+        <span style="color:#8b949e;font-size:13px;margin-left:8px">${d.inventarios[k].length} rollos</span>
+       </div>`
+    ).join('');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PASO 1 — Login
+// ─────────────────────────────────────────────────────────────────────────────
+function confirmarLogin() {
+  const user = document.getElementById('inp-login-user').value.trim();
+  const pass = document.getElementById('inp-login-pass').value;
+  if (!user || !pass) { setMsg('msg-login', 'Ingrese usuario y contraseña.', 'error'); return; }
+  if (CREDS[user] !== pass) {
+    setMsg('msg-login', 'Usuario o contraseña incorrectos.', 'error');
+    document.getElementById('inp-login-pass').value = '';
+    document.getElementById('inp-login-pass').focus();
+    return;
+  }
+  S.loggedIn = true;
+  S.operario = user;
+
+  const ses = loadSession();
+  if (ses && ses.operario === S.operario && ses.ubicacion) {
+    const nPend = (ses.pending || []).length;
+    let msg = 'Sesion sin guardar detectada:\n';
+    msg += `  Modo: ${ses.modo === 'inventario' ? 'Inventario — ' + ses.inv_nombre : 'Registro'}\n`;
+    msg += `  Ubicacion: ${ses.ubicacion}\n`;
+    msg += `  Rollos pendientes: ${nPend}\n`;
+    if (ses.guardadoEn) msg += `  Guardado: ${ses.guardadoEn}\n`;
+    msg += '\n¿Continuar donde quedo?';
+    if (confirm(msg)) {
+      S.modo             = ses.modo;
+      S.inv_nombre       = ses.inv_nombre;
+      S.ubicacion        = ses.ubicacion;
+      S.pending          = ses.pending || [];
+      S.ses              = new Set(S.pending.map(p => p.lote));
+      S.totalUbicaciones = ses.totalUbicaciones || 0;
+      if (nPend > 0) { goRollosConSesion(); } else { goUbicacion(); }
+      return;
+    }
+    clearSession();
+  }
+  goMenu();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PASO 2 — Menu
+// ─────────────────────────────────────────────────────────────────────────────
+function goMenu() {
+  if (!S.loggedIn) { showScreen('sc-login'); focusInp('inp-login-user'); return; }
+  clearSession();
+  S.modo = ''; S.inv_nombre = ''; S.ubicacion = '';
+  S.pending = []; S.ses = new Set(); S.totalUbicaciones = 0;
+  document.getElementById('menu-badge').textContent = S.operario;
+  document.getElementById('menu-op-txt').textContent = 'Operario: ' + S.operario;
+  showScreen('sc-menu');
+}
+
+function irRegistrar() {
+  S.modo = 'registro';
+  goUbicacion();
+}
+
+function irInventario() {
+  S.modo = 'inventario';
+  const n = new Date();
+  const auto = `INV_${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`;
+  document.getElementById('inp-inv-nombre').value = auto;
+  document.getElementById('invs-badge').textContent = S.operario;
+  clearMsg('msg-inv-setup');
+  showScreen('sc-inv-setup');
+  document.getElementById('inp-inv-nombre').focus();
+}
+
+function irExportar() {
+  showScreen('sc-export');
+  renderStats('stats-export', false);
+}
+
+function irVerDatos() {
+  showScreen('sc-datos');
+  renderStats('stats-datos', true);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PASO 2b — Nombre inventario
+// ─────────────────────────────────────────────────────────────────────────────
+function confirmarInventario() {
+  let nombre = document.getElementById('inp-inv-nombre').value.trim();
+  if (!nombre) { setMsg('msg-inv-setup', 'Ingrese un nombre para el inventario.', 'error'); return; }
+  if (!nombre.toUpperCase().startsWith('INV_')) nombre = 'INV_' + nombre;
+  S.inv_nombre = nombre.toUpperCase();
+  const d = getData();
+  if (!d.inventarios[S.inv_nombre]) d.inventarios[S.inv_nombre] = [];
+  saveData(d);
+  saveSession();
+  goUbicacion();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PASO 3 — Ubicacion
+// ─────────────────────────────────────────────────────────────────────────────
+function goUbicacion() {
+  const esInv = S.modo === 'inventario';
+  document.getElementById('ubic-titulo').textContent = esInv ? 'Inventario — Ubicacion' : 'Registrar — Ubicacion';
+  document.getElementById('ubic-badge').textContent = S.operario;
+
+  const items = [['OPERARIO:', S.operario]];
+  if (esInv) items.unshift(['INVENTARIO:', S.inv_nombre]);
+  if (S.totalUbicaciones > 0) items.push(['UBIC. GUARDADAS:', String(S.totalUbicaciones)]);
+  banner('ubic-banner', items);
+
+  clearMsg('msg-ubic');
+  showScreen('sc-ubicacion');
+  focusInp('inp-ubic');
+  saveSession();
+}
+
+function confirmarUbicacion() {
+  const ub = document.getElementById('inp-ubic').value.trim().toUpperCase();
+  if (!ub) { setMsg('msg-ubic', 'Escanee o ingrese la ubicacion.', 'error'); return; }
+  if (!ub.startsWith('D')) {
+    setMsg('msg-ubic', 'Codigo invalido. Debe comenzar con D (DEP1, DEP2, D077, etc.).', 'error'); return;
+  }
+
+  S.ubicacion = ub;
+  S.pending   = [];
+  S.ses       = new Set();
+
+  const esInv = S.modo === 'inventario';
+  document.getElementById('rollos-titulo').textContent = esInv ? 'Inventario — Rollos' : 'Registrar — Rollos';
+
+  const items = [['UBIC:', ub], ['OP:', S.operario]];
+  if (esInv) items.unshift(['INV:', S.inv_nombre]);
+  banner('rollos-banner', items);
+
+  document.getElementById('rollos-count').textContent = 'Rollos en la tanda: 0';
+  document.getElementById('rollos-list').innerHTML = '';
+  clearMsg('msg-rollos');
+  mostrarLotesExistentes(ub);
+  showScreen('sc-rollos');
+  focusInp('inp-lote');
+}
+
+function mostrarLotesExistentes(ub) {
+  const regs = getData().registros.filter(r => r.id_ubicacion === ub);
+  const wrap = document.getElementById('rollos-existentes');
+  if (regs.length === 0) { wrap.style.display = 'none'; return; }
+  document.getElementById('existentes-titulo').textContent =
+    `${regs.length} lote(s) ya registrado(s) en esta ubicacion:`;
+  document.getElementById('rollos-existentes-list').innerHTML =
+    regs.map((r, i) =>
+      `<div class="sitem"><span class="snum">${i+1}</span><span class="slote">${r.id_lote}</span><span class="shora">${(r.fecha||'').substring(11,19)}</span><button class="btn-del-lote" onclick="eliminarLoteExistente('${r.id_lote}')">✕ Eliminar</button></div>`
+    ).join('');
+  wrap.style.display = 'block';
+}
+
+function eliminarLoteExistente(idLote) {
+  if (!confirm(`Eliminar el lote '${idLote}' de esta ubicacion?`)) return;
+  const d = getData();
+  d.registros = d.registros.filter(r => r.id_lote !== idLote);
+  saveData(d);
+  mostrarLotesExistentes(S.ubicacion);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PASO 4 — Rollos
+// ─────────────────────────────────────────────────────────────────────────────
+function agregarLote() {
+  const lote = document.getElementById('inp-lote').value.trim();
+  if (!lote) return;
+  document.getElementById('inp-lote').value = '';
+
+  if (lote.toUpperCase().startsWith('D')) {
+    setMsg('msg-rollos', `Codigo de UBICACION escaneado — ingrese un articulo.`, 'error');
+    focusInp('inp-lote'); return;
+  }
+  if (lote.length > 9) {
+    setMsg('msg-rollos', `Codigo invalido: debe tener 9 digitos o menos (tiene ${lote.length}).`, 'error');
+    focusInp('inp-lote'); return;
+  }
+
+  if (S.ses.has(lote)) {
+    setMsg('msg-rollos', `DUPLICADO en tanda: '${lote}' ya fue escaneado.`, 'error');
+    focusInp('inp-lote'); return;
+  }
+  if (S.modo === 'registro' && loteEnRegistros(lote)) {
+    setMsg('msg-rollos', `'${lote}' ya fue registrado en el sistema.`, 'error');
+    focusInp('inp-lote'); return;
+  }
+  if (S.modo === 'inventario' && loteEnInventario(S.inv_nombre, lote)) {
+    setMsg('msg-rollos', `'${lote}' ya figura en este inventario.`, 'error');
+    focusInp('inp-lote'); return;
+  }
+
+  S.ses.add(lote);
+  S.pending.push({ lote, hora: timeStr() });
+  const n = S.pending.length;
+  document.getElementById('rollos-count').textContent = `Rollos en la tanda: ${n}`;
+  document.getElementById('rollos-list').innerHTML = slistHTML(S.pending);
+  setMsg('msg-rollos', `'${lote}' agregado  (${n} en total)`, 'ok');
+  saveSession();
+  focusInp('inp-lote');
+}
+
+function guardarBatch() {
+  if (!S.pending.length) return 0;
+  const d    = getData();
+  const fecha = nowStr();
+  for (const { lote } of S.pending) {
+    if (S.modo === 'registro') {
+      d.registros.push({ id_usuario: S.operario, id_lote: lote, id_ubicacion: S.ubicacion, fecha });
+    } else {
+      d.inventarios[S.inv_nombre].push({ id_ubicacion: S.ubicacion, id_lote: lote, operario: S.operario, fecha });
+    }
+  }
+  saveData(d);
+  const n = S.pending.length;
+  S.pending = [];
+  S.ses     = new Set();
+  S.totalUbicaciones++;
+  return n;
+}
+
+function siguienteUbicacion() {
+  const n = guardarBatch();
+  if (n === 0 && S.totalUbicaciones === 0) {
+    setMsg('msg-rollos', 'No hay rollos escaneados en esta tanda.', 'error'); return;
+  }
+  goUbicacion();
+}
+
+function finalizarTodo() {
+  const n = guardarBatch();
+  if (n === 0 && S.totalUbicaciones === 0) {
+    setMsg('msg-rollos', 'No hay rollos escaneados para guardar.', 'error'); return;
+  }
+  clearSession();
+  showScreen('sc-export');
+  renderStats('stats-export', false);
+}
+
+function cancelarTanda() {
+  S.pending = [];
+  S.ses     = new Set();
+  goUbicacion();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Exportar / Limpiar
+// ─────────────────────────────────────────────────────────────────────────────
+function exportar() {
+  const d    = getData();
+  const json = JSON.stringify(d, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const ahora = new Date();
+  const fecha = ahora.toISOString().slice(0, 10);
+  const hora  = ahora.toTimeString().slice(0, 8).replace(/:/g, '-');
+  a.href = url; a.download = `inventario_export_${fecha}_${hora}.json`;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function limpiarDatos() {
+  if (!confirm('Esto borrara TODOS los datos guardados en la tablet.\n\n¿Ya exportaste el archivo JSON?\n\nConfirmar?')) return;
+  localStorage.removeItem('inv_data');
+  clearSession();
+  alert('Datos eliminados.');
+  goMenu();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Auto-mayusculas en campos de escaneo (excluye usuario y clave de login)
+// ─────────────────────────────────────────────────────────────────────────────
+['inp-inv-nombre', 'inp-ubic', 'inp-lote'].forEach(id => {
+  document.getElementById(id).addEventListener('input', function() {
+    const pos = this.selectionStart;
+    this.value = this.value.toUpperCase();
+    this.setSelectionRange(pos, pos);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enter key — cada input se autoconfirma al escanear
+// ─────────────────────────────────────────────────────────────────────────────
+const enterMap = {
+  'inp-login-user': () => document.getElementById('inp-login-pass').focus(),
+  'inp-login-pass': confirmarLogin,
+  'inp-inv-nombre': confirmarInventario,
+  'inp-ubic':       confirmarUbicacion,
+  'inp-lote':       agregarLote,
+};
+Object.entries(enterMap).forEach(([id, fn]) => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); fn(); }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+(function init() {
+  const ses = loadSession();
+  if (ses && ses.ubicacion) {
+    const nPend = (ses.pending || []).length;
+    const el = document.getElementById('session-alert');
+    const inv = ses.inv_nombre ? ` (${ses.inv_nombre})` : '';
+    el.textContent = `Sesion guardada${inv}: ${ses.ubicacion} · ${nPend} rollo(s). Inicie sesion para recuperar.`;
+    el.className = 'msg show msg-info';
+  }
+  focusInp('inp-login-user');
+})();
+</script>
+</body>
+</html>
