@@ -1,0 +1,63 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Python 3 (Textual TUI + openpyxl) — current; React + Express + PostgreSQL — target (per PRD)
+  Architecture: Single-module TUI app (inventario.py) with dataclass models, ExcelManager persistence, checksum validation
+  Testing: pytest — unit + integration layers, no coverage tooling configured
+  Style: Spanish-language codebase, no linter/formatter/type-checker configured
+  Companion: inventario_android.html (standalone HTML/JS/localStorage inventory client)
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+    - Reference PRD.md for domain rules and open questions
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing code patterns (dataclass models, ExcelManager for persistence)
+      - Target stack is React + Express + PostgreSQL per PRD; current code is Python TUI
+    tdd: true
+    test_command: "pytest -v"
+  verify:
+    test_command: "pytest -v"
+    build_command: ""
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+
+testing:
+  strict_tdd: true
+  runner:
+    command: "pytest -v"
+    framework: pytest
+  layers:
+    unit:
+      available: true
+      tool: pytest
+    integration:
+      available: true
+      tool: pytest
+    e2e:
+      available: false
+      tool: null
+  coverage:
+    available: false
+    command: null
+  quality:
+    linter:
+      available: false
+      command: null
+    type_checker:
+      available: false
+      command: null
+    formatter:
+      available: false
+      command: null
